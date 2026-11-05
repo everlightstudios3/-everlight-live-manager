@@ -316,7 +316,7 @@ async function connectDashboard() {
 
     document.getElementById("channelCards").innerHTML = cards();
     document.getElementById("channelCards2").innerHTML = cards();
-
+await loadSchedules();
     alert("Dashboard connected successfully!");
   } catch (error) {
     apiToken = null;
@@ -628,6 +628,180 @@ function deletePlaylist(index) {
   mediaPlaylists.splice(index, 1);
   renderPlaylists();
 }
+  
+// =====================================
+// SCHEDULE MANAGEMENT
+// =====================================
+
+let savedSchedules = [];
+
+function escapeScheduleHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
+}
+
+async function loadSchedules() {
+  const status = document.getElementById("scheduleStatus");
+  const table = document.getElementById("scheduleTableBody");
+
+  try {
+    status.textContent = "Loading schedules...";
+
+    const result = await apiRequest("/api/schedules");
+
+    savedSchedules = result.schedules || [];
+
+    if (!savedSchedules.length) {
+      table.innerHTML = '<tr><td colspan="6">No schedules found.</td></tr>';
+      status.textContent = "No schedules available.";
+      return;
+    }
+
+    const channelNames = {
+      emt: "Everlight Music Telugu",
+      ew: "Everlight Worship",
+      yp: "Yesaiah Patalu"
+    };
+
+    table.innerHTML = savedSchedules.map(schedule => `
+      <tr>
+        <td>${channelNames[schedule.channel_id] || escapeScheduleHTML(schedule.channel_id)}</td>
+        <td>${escapeScheduleHTML(schedule.name)}</td>
+        <td>${escapeScheduleHTML(schedule.start_time)}</td>
+        <td>${schedule.channel_id === "ew" &&
+              schedule.start_time === "00:00" &&
+              schedule.end_time === "23:59"
+              ? "24/7 placeholder"
+              : escapeScheduleHTML(schedule.end_time)}
+            ${Number(schedule.crosses_midnight) === 1 ? "(Next day)" : ""}
+        </td>
+        <td>${Number(schedule.enabled) === 1 ? "Enabled" : "Disabled"}</td>
+        <td>
+          <button type="button" onclick="editSchedule('${schedule.id}')">Edit</button>
+          <button type="button" onclick="toggleSchedule('${schedule.id}')">
+            ${Number(schedule.enabled) === 1 ? "Disable" : "Enable"}
+          </button>
+          <button type="button" onclick="deleteSchedule('${schedule.id}')">Delete</button>
+        </td>
+      </tr>
+    `).join("");
+
+    status.textContent = savedSchedules.length + " schedules loaded successfully.";
+
+  } catch (error) {
+    status.textContent = "Unable to load schedules: " + error.message;
+    table.innerHTML = '<tr><td colspan="6">Please reconnect the dashboard and try again.</td></tr>';
+  }
+}
+
+async function saveSchedule() {
+  const editId = document.getElementById("scheduleEditId").value;
+
+  const body = {
+    channel_id: document.getElementById("scheduleChannel").value,
+    name: document.getElementById("scheduleName").value.trim(),
+    start_time: document.getElementById("scheduleStart").value,
+    end_time: document.getElementById("scheduleEnd").value
+  };
+
+  if (!body.name || !body.start_time || !body.end_time) {
+    alert("Please complete all schedule fields.");
+    return;
+  }
+
+  try {
+    const endpoint = editId
+      ? "/api/schedules/" + encodeURIComponent(editId) + "/update"
+      : "/api/schedules";
+
+    await apiRequest(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+
+    alert(editId ? "Schedule updated successfully!" : "Schedule created successfully!");
+
+    resetScheduleForm();
+    await loadSchedules();
+
+  } catch (error) {
+    alert("Unable to save schedule: " + error.message);
+  }
+}
+
+function editSchedule(id) {
+  const schedule = savedSchedules.find(item => item.id === id);
+
+  if (!schedule) {
+    alert("Schedule not found.");
+    return;
+  }
+
+  document.getElementById("scheduleEditId").value = schedule.id;
+  document.getElementById("scheduleChannel").value = schedule.channel_id;
+  document.getElementById("scheduleName").value = schedule.name;
+  document.getElementById("scheduleStart").value = schedule.start_time;
+  document.getElementById("scheduleEnd").value = schedule.end_time;
+  document.getElementById("scheduleFormTitle").textContent = "Edit Schedule";
+
+  document.getElementById("scheduleFormTitle").scrollIntoView({
+    behavior: "smooth",
+    block: "center"
+  });
+}
+
+function resetScheduleForm() {
+  document.getElementById("scheduleEditId").value = "";
+  document.getElementById("scheduleChannel").value = "emt";
+  document.getElementById("scheduleName").value = "";
+  document.getElementById("scheduleStart").value = "";
+  document.getElementById("scheduleEnd").value = "";
+  document.getElementById("scheduleFormTitle").textContent = "Add New Schedule";
+}
+
+async function toggleSchedule(id) {
+  const schedule = savedSchedules.find(item => item.id === id);
+
+  if (!schedule) return;
+
+  try {
+    await apiRequest("/api/schedules/" + encodeURIComponent(id) + "/toggle", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        enabled: Number(schedule.enabled) !== 1
+      })
+    });
+
+    await loadSchedules();
+
+  } catch (error) {
+    alert("Unable to change schedule status: " + error.message);
+  }
+}
+
+async function deleteSchedule(id) {
+  if (!confirm("Are you sure you want to delete this schedule?")) return;
+
+  try {
+    await apiRequest("/api/schedules/" + encodeURIComponent(id) + "/delete", {
+      method: "POST"
+    });
+
+    alert("Schedule deleted successfully!");
+    await loadSchedules();
+
+  } catch (error) {
+    alert("Unable to delete schedule: " + error.message);
+  }
+}
+  
 </script>
 </body>
 </html>
