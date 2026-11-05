@@ -1029,6 +1029,7 @@ async function uploadSelectedMedia() {
 }
 
 // Load permanent cloud media
+
 async function loadCloudMedia() {
   const container = document.getElementById("mediaList");
 
@@ -1051,13 +1052,28 @@ async function loadCloudMedia() {
     container.innerHTML = media.map(item => `
       <div style="background:#f8fafc;padding:15px;margin-top:12px;border-radius:10px">
         <strong>${escapeMediaHTML(item.filename)}</strong>
+
         <p style="color:#64748b;margin-top:8px">
           ${formatMediaSize(Number(item.file_size_bytes))}
           | ${escapeMediaHTML(item.upload_status)}
         </p>
+
         <p style="font-size:12px;color:#64748b">
           Uploaded: ${escapeMediaHTML(item.created_at || "Date unavailable")}
         </p>
+
+        <button
+          type="button"
+          class="btn"
+          onclick="previewCloudMedia('${escapeMediaHTML(item.id)}')"
+          style="margin-top:10px"
+        >
+          ▶ Play Preview
+        </button>
+
+        <div id="preview-${escapeMediaHTML(item.id)}"
+          style="margin-top:15px">
+        </div>
       </div>
     `).join("");
 
@@ -1065,6 +1081,53 @@ async function loadCloudMedia() {
     container.textContent = "Unable to load media: " + error.message;
   }
 }
+
+// =====================================
+// PRIVATE CLOUD VIDEO PREVIEW
+// =====================================
+
+async function previewCloudMedia(mediaId) {
+  const playerContainer = document.getElementById("preview-" + mediaId);
+
+  if (!playerContainer) return;
+
+  playerContainer.textContent = "Generating secure playback link...";
+
+  try {
+    const result = await apiRequest(
+      "/api/media/" + encodeURIComponent(mediaId) + "/play"
+    );
+
+    if (!result.success || !result.playback_url) {
+      throw new Error("Playback link unavailable.");
+    }
+
+    const video = document.createElement("video");
+
+    video.controls = true;
+    video.playsInline = true;
+    video.preload = "metadata";
+    video.style.width = "100%";
+    video.style.maxWidth = "700px";
+    video.style.borderRadius = "10px";
+    video.style.background = "#000";
+
+    video.src = result.playback_url;
+
+    playerContainer.innerHTML = "";
+    playerContainer.appendChild(video);
+
+    playerContainer.insertAdjacentHTML(
+      "beforeend",
+      '<p style="font-size:12px;color:#64748b;margin-top:8px">Private playback link expires in 1 hour.</p>'
+    );
+
+  } catch (error) {
+    playerContainer.textContent =
+      "Playback failed: " + error.message;
+  }
+}
+
 
 // Connect the buttons
 document.getElementById("uploadMediaBtn").addEventListener(
