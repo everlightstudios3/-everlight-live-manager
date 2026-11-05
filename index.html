@@ -327,7 +327,8 @@ function cards(){
 }
 document.getElementById("channelCards").innerHTML=cards();
 document.getElementById("channelCards2").innerHTML=cards();
-function openChannel(index) {
+
+async function openChannel(index) {
   const channel = channels[index];
 
   document.querySelectorAll(".page").forEach(p => {
@@ -359,10 +360,13 @@ function openChannel(index) {
         <h3 style="margin-top:25px">Broadcast Settings</h3>
 
         <label>Streaming Resolution</label>
-        <select id="streamResolution" style="display:block;padding:10px;margin:10px 0;width:100%;max-width:300px">
+        <select id="streamResolution"
+          style="display:block;padding:10px;margin:10px 0;width:100%;max-width:300px">
           <option value="720p">720p HD</option>
           <option value="1080p">1080p Full HD</option>
         </select>
+
+        <p id="resolutionStatus" style="color:#64748b">Loading saved settings...</p>
 
         <h3 style="margin-top:25px">Media Selection</h3>
 
@@ -379,7 +383,7 @@ function openChannel(index) {
             Select Media
           </button>
 
-          <button onclick="alert('Streaming backend is not connected yet. This is an interface preview only.')"
+          <button onclick="alert('Streaming engine is not connected yet.')"
             style="padding:12px 20px;background:#16a34a;color:white;border:0;border-radius:8px;cursor:pointer">
             Start Broadcast
           </button>
@@ -392,7 +396,7 @@ function openChannel(index) {
         </div>
 
         <p style="margin-top:25px;color:#b45309">
-          Connection: Backend setup pending. YouTube streaming is not connected yet.
+          Connection: YouTube streaming engine is not connected yet.
         </p>
 
       </div>
@@ -400,6 +404,53 @@ function openChannel(index) {
   `;
 
   overview.classList.add("active");
+
+  const resolutionSelect = document.getElementById("streamResolution");
+  const resolutionStatus = document.getElementById("resolutionStatus");
+
+  if (!apiToken || !channel.id) {
+    resolutionStatus.textContent = "Please connect the backend first.";
+    resolutionSelect.disabled = true;
+    return;
+  }
+
+  try {
+    const result = await apiRequest(
+      "/api/channels/" + encodeURIComponent(channel.id) + "/settings"
+    );
+
+    resolutionSelect.value = result.settings.resolution || "720p";
+    resolutionStatus.textContent = "Saved settings loaded from database.";
+  } catch (error) {
+    resolutionStatus.textContent = "Could not load settings: " + error.message;
+    resolutionSelect.disabled = true;
+    return;
+  }
+
+  resolutionSelect.addEventListener("change", async function() {
+    resolutionSelect.disabled = true;
+    resolutionStatus.textContent = "Saving resolution...";
+
+    try {
+      const result = await apiRequest(
+        "/api/channels/" + encodeURIComponent(channel.id) + "/settings",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ resolution: resolutionSelect.value })
+        }
+      );
+
+      resolutionStatus.textContent =
+        "Saved successfully: " + result.resolution;
+      channel.resolution = result.resolution;
+
+    } catch (error) {
+      resolutionStatus.textContent = "Save failed: " + error.message;
+    } finally {
+      resolutionSelect.disabled = false;
+    }
+  });
 }
 
 function previewChannelMedia() {
