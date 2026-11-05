@@ -833,6 +833,249 @@ async function deleteSchedule(id) {
   }
 }
   
+// =====================================
+// CLOUD MEDIA LIBRARY - EVERLIGHT WORSHIP
+// =====================================
+
+const MEDIA_CHUNK_SIZE = 10 * 1024 * 1024;
+const MEDIA_MAX_SIZE = 5 * 1024 * 1024 * 1024;
+
+let selectedCloudFiles = [];
+
+function formatMediaSize(bytes) {
+  return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+}
+
+function escapeMediaHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
+}
+
+// Select and validate videos
+document.getElementById("videoFiles").addEventListener("change", function(event) {
+  const files = Array.from(event.target.files);
+  const preview = document.getElementById("mediaPreview");
+  const uploadButton = document.getElementById("uploadMediaBtn");
+
+  selectedCloudFiles = [];
+  preview.innerHTML = "";
+
+  files.forEach(file => {
+    if (!file.name.toLowerCase().endsWith(".mp4") || file.type !== "video/mp4") {
+      alert("Only MP4 videos are allowed: " + file.name);
+      return;
+    }
+
+    if (file.size === 0 || file.size > MEDIA_MAX_SIZE) {
+      alert("File must be greater than 0 and no larger than 5 GB: " + file.name);
+      return;
+    }
+
+    selectedCloudFiles.push(file);
+
+    const item = document.createElement("p");
+    item.textContent = file.name + " — " + formatMediaSize(file.size);
+    preview.appendChild(item);
+  });
+
+  uploadButton.disabled = selectedCloudFiles.length === 0;
+});
+
+// Upload one video using multipart chunks
+async function uploadCloudVideo(file) {
+  let uploadId = null;
+  let uploadCompleted = false;
+
+  try {
+    const start = await apiRequest("/api/media/upload/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        channel_id: "ew",
+        filename: file.name,
+        file_size_bytes: file.size
+      })
+    });
+
+    uploadId = start.uploadId;
+
+    if (!uploadId) {
+      throw new Error("Upload initialization did not return an upload ID.");
+    }
+
+    const parts = [];
+    let uploadedBytes = 0;
+    let partNumber = 1;
+
+    while (uploadedBytes < file.size) {
+      const startByte = uploadedBytes;
+      const endByte = Math.min(startByte + MEDIA_CHUNK_SIZE, file.size);
+      const chunk = file.slice(startByte, endByte);
+
+      const response = await fetch(
+        API_BASE + "/api/media/upload/part/" +
+        encodeURIComponent(uploadId) + "?partNumber=" + partNumber,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: "Bearer " + apiToken,
+            "Content-Type": "application/octet-stream"
+          },
+          body: chunk
+        }
+      );
+
+      const partData = await response.json();
+
+      if (!response.ok || !partData.success || !partData.etag) {
+        throw new Error(partData.error || "Chunk " + partNumber + " failed.");
+      }
+
+      parts.push({
+        partNumber: partNumber,
+        etag: partData.etag
+      });
+
+      uploadedBytes = endByte;
+
+      const percent = Math.round((uploadedBytes / file.size) * 100);
+
+      document.getElementById("uploadStatus").textContent =
+        file.name + ": " + percent + "% uploaded";
+
+      partNumber++;
+    }
+
+    await apiRequest(
+      "/api/media/upload/complete/" + encodeURIComponent(uploadId),
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ parts: parts })
+      }
+    );
+
+    uploadCompleted = true;
+
+    return true;
+
+  } catch (error) {
+    if (uploadId && !uploadCompleted && apiToken) {
+      try {
+        await apiRequest(
+          "/api/media/upload/abort/" + encodeURIComponent(uploadId),
+          { method: "POST" }
+        );
+      } catch (abortError) {
+        console.error("Upload cleanup failed:", abortError);
+      }
+    }
+
+    throw error;
+  }
+}
+
+// Upload selected videos one at a time
+async function uploadSelectedMedia() {
+  const button = document.getElementById("uploadMediaBtn");
+  const status = document.getElementById("uploadStatus");
+
+  if (!apiToken) {
+    status.textContent = "Please connect the dashboard first.";
+    return;
+  }
+
+  if (!selectedCloudFiles.length) {
+    status.textContent = "Please select MP4 videos first.";
+    return;
+  }
+
+  button.disabled = true;
+
+  const files = [...selectedCloudFiles];
+  let successful = 0;
+
+  try {
+    for (let i = 0; i < files.length; i++) {
+      status.textContent =
+        "Uploading video " + (i + 1) + " of " + files.length + ": " + files[i].name;
+
+      await uploadCloudVideo(files[i]);
+      successful++;
+    }
+
+    status.textContent =
+      "Upload complete! " + successful + " video(s) saved to cloud storage.";
+
+    selectedCloudFiles = [];
+    document.getElementById("videoFiles").value = "";
+    document.getElementById("mediaPreview").innerHTML = "";
+
+    await loadCloudMedia();
+
+  } catch (error) {
+    status.textContent =
+      successful + " video(s) completed. Upload stopped: " + error.message;
+
+    await loadCloudMedia().catch(() => {});
+  } finally {
+    button.disabled = selectedCloudFiles.length === 0;
+  }
+}
+
+// Load permanent cloud media
+async function loadCloudMedia() {
+  const container = document.getElementById("mediaList");
+
+  if (!apiToken) {
+    container.textContent = "Connect the dashboard to view uploaded media.";
+    return;
+  }
+
+  container.textContent = "Loading cloud media...";
+
+  try {
+    const result = await apiRequest("/api/media?channel_id=ew");
+    const media = result.media || [];
+
+    if (!media.length) {
+      container.textContent = "No uploaded videos found.";
+      return;
+    }
+
+    container.innerHTML = media.map(item => `
+      <div style="background:#f8fafc;padding:15px;margin-top:12px;border-radius:10px">
+        <strong>${escapeMediaHTML(item.filename)}</strong>
+        <p style="color:#64748b;margin-top:8px">
+          ${formatMediaSize(Number(item.file_size_bytes))}
+          | ${escapeMediaHTML(item.upload_status)}
+        </p>
+        <p style="font-size:12px;color:#64748b">
+          Uploaded: ${escapeMediaHTML(item.created_at || "Date unavailable")}
+        </p>
+      </div>
+    `).join("");
+
+  } catch (error) {
+    container.textContent = "Unable to load media: " + error.message;
+  }
+}
+
+// Connect the buttons
+document.getElementById("uploadMediaBtn").addEventListener(
+  "click",
+  uploadSelectedMedia
+);
+
+document.getElementById("refreshMediaBtn").addEventListener(
+  "click",
+  loadCloudMedia
+);
 </script>
 </body>
 </html>
