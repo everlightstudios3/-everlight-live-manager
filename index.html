@@ -1,1 +1,206 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Everlight Live Manager</title>
+<style>
+:root {
+  --green:#087451;
+  --dark:#123e32;
+  --bg:#f7f9f8;
+  --border:#e8eeeb;
+  --muted:#7c8983;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#192a23;font-family:Inter,Arial,sans-serif}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:245px;background:white;border-right:1px solid var(--border);padding:25px 17px;position:fixed;inset:0 auto 0 0}
+.brand{display:flex;align-items:center;gap:11px;padding:5px 8px 30px}
+.logo{width:42px;height:42px;border-radius:12px;background:var(--dark);color:white;display:grid;place-items:center;font-size:22px}
+.brand strong{font-size:15px;letter-spacing:1px}
+.brand small{display:block;color:var(--muted);font-size:10px;letter-spacing:2px;margin-top:4px}
+.navlabel{font-size:10px;color:#a0aaa5;letter-spacing:1.5px;margin:20px 10px 9px}
+.nav button{width:100%;border:0;background:transparent;padding:12px;border-radius:9px;text-align:left;color:#65736c;font-size:13px;margin:2px 0;cursor:pointer}
+.nav button.active,.nav button:hover{background:#eaf5ef;color:var(--green);font-weight:700}
+.main{margin-left:245px;width:calc(100% - 245px);padding:27px 35px}
+.top{display:flex;justify-content:space-between;align-items:center;background:white;border:1px solid var(--border);padding:14px 19px;border-radius:12px}
+.top small{color:var(--muted)}
+.user{background:#e9f4ed;color:var(--green);padding:10px;border-radius:50%}
+h1{font-size:25px;margin:30px 0 7px}
+.subtitle{font-size:13px;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin:25px 0}
+.card{background:white;border:1px solid var(--border);border-radius:13px;padding:20px}
+.statlabel{font-size:12px;color:var(--muted)}
+.statvalue{font-size:27px;font-weight:750;margin:12px 0 5px}
+.green{color:var(--green)}
+.sectionhead{display:flex;align-items:center;justify-content:space-between;margin:30px 0 15px}
+.sectionhead h2{font-size:17px;margin:0}
+.sectionhead span{font-size:12px;color:var(--muted)}
+.channels{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
+.channel{background:white;border:1px solid var(--border);border-radius:13px;padding:20px}
+.chhead{display:flex;justify-content:space-between;align-items:center}
+.yt{background:#fff0ee;color:#e33c32;padding:10px;border-radius:10px;font-size:20px}
+.status{font-size:10px;background:#eaf7ee;color:#16844a;padding:6px 9px;border-radius:20px}
+.channel h3{font-size:15px;margin:18px 0 5px}
+.channel p{font-size:12px;color:var(--muted);margin:0}
+.details{border-top:1px solid var(--border);margin-top:18px;padding-top:15px;font-size:12px;display:flex;justify-content:space-between}
+.btn{border:0;border-radius:8px;padding:10px 14px;background:var(--green);color:white;font-size:12px;cursor:pointer}
+.btn.light{background:#eaf4ee;color:var(--green)}
+.schedule{background:white;border:1px solid var(--border);border-radius:13px;overflow:hidden}
+.schedule table{width:100%;border-collapse:collapse;text-align:left;font-size:12px}
+.schedule th,.schedule td{padding:15px;border-bottom:1px solid var(--border)}
+.schedule th{color:var(--muted);background:#fafcfb;font-weight:500}
+.schedule td{color:#35483e}
+.footer{margin-top:25px;color:#9aa59f;font-size:11px;text-align:center}
+.page{display:none}
+.page.active{display:block}
+.uploadbox{border:2px dashed #cbded2;border-radius:13px;padding:35px;text-align:center;background:white}
+.uploadbox input{max-width:100%;margin-top:15px}
+.mobile{display:none}
+@media(max-width:950px){
+ .sidebar{width:190px}.main{margin-left:190px;width:calc(100% - 190px);padding:20px}
+ .stats{grid-template-columns:repeat(2,1fr)}.channels{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+ .sidebar{width:65px;padding:15px 7px}
+ .brand strong,.brand small,.navlabel,.nav button span{display:none}
+ .brand{padding:5px 3px 25px}.nav button{text-align:center;font-size:17px;padding:13px 3px}
+ .main{margin-left:65px;width:calc(100% - 65px);padding:12px}
+ .stats{grid-template-columns:repeat(2,1fr);gap:8px}
+ .card{padding:13px}.statvalue{font-size:22px}
+ .top{padding:12px}.sectionhead{gap:8px}
+ .schedule{overflow-x:auto}.schedule table{min-width:480px}
+ h1{font-size:21px}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar">
+ <div class="brand">
+  <div class="logo">✦</div>
+  <div><strong>EVERLIGHT</strong><small>LIVE MANAGER</small></div>
+ </div>
+ <div class="navlabel">WORKSPACE</div>
+ <div class="nav">
+  <button class="active" onclick="showPage('overview',this)">▦ <span>Overview</span></button>
+  <button onclick="showPage('channels',this)">◉ <span>Channels</span></button>
+  <button onclick="showPage('media',this)">▤ <span>Media Library</span></button>
+  <button onclick="showPage('schedule',this)">◷ <span>Schedules</span></button>
+  <button onclick="showPage('logs',this)">☷ <span>Activity Logs</span></button>
+ </div>
+ <div class="navlabel">SYSTEM</div>
+ <div class="nav">
+  <button onclick="showPage('settings',this)">⚙ <span>Settings</span></button>
+ </div>
+</aside>
+
+<main class="main">
+ <header class="top">
+  <small>Everlight Studios / Broadcasting</small>
+  <div class="user">ES</div>
+ </header>
+
+ <section id="overview" class="page active">
+  <h1>Broadcast Overview</h1>
+  <div class="subtitle">Manage your three YouTube channels from one place.</div>
+  <div class="stats">
+   <div class="card"><div class="statlabel">TOTAL CHANNELS</div><div class="statvalue">03</div><div class="statlabel">Configured slots</div></div>
+   <div class="card"><div class="statlabel">LIVE STREAMS</div><div class="statvalue green">00</div><div class="statlabel">Not connected yet</div></div>
+   <div class="card"><div class="statlabel">MEDIA FILES</div><div class="statvalue">00</div><div class="statlabel">Uploaded recordings</div></div>
+   <div class="card"><div class="statlabel">SYSTEM STATUS</div><div class="statvalue" style="font-size:19px">Not connected</div><div class="statlabel">Streaming engine pending</div></div>
+  </div>
+  <div class="sectionhead"><h2>Your Channels</h2><span>3 broadcasting profiles</span></div>
+  <div class="channels" id="channelCards"></div>
+  <div class="sectionhead"><h2>Upcoming Schedule</h2><span>India Standard Time</span></div>
+  <div class="schedule"><table><thead><tr><th>CHANNEL</th><th>TIME</th><th>MODE</th><th>STATUS</th></tr></thead><tbody>
+   <tr><td>Channel 01</td><td>24/7</td><td>Continuous</td><td>Not configured</td></tr>
+   <tr><td>Channel 02</td><td>05:00–16:00</td><td>Morning</td><td>Not configured</td></tr>
+   <tr><td>Channel 02</td><td>17:00–04:00</td><td>Evening</td><td>Not configured</td></tr>
+   <tr><td>Channel 03</td><td>05:00–10:00</td><td>Morning</td><td>Not configured</td></tr>
+   <tr><td>Channel 03</td><td>17:00–22:00</td><td>Evening</td><td>Not configured</td></tr>
+  </tbody></table></div>
+ </section>
+
+ <section id="channels" class="page">
+  <h1>Channel Management</h1>
+  <p class="subtitle">Manage independent YouTube broadcasting profiles.</p>
+  <div class="channels" id="channelCards2"></div>
+ </section>
+
+ <section id="media" class="page">
+  <h1>Media Library</h1>
+  <p class="subtitle">Prepare your recorded MP4 footage for broadcasting.</p>
+  <div class="uploadbox">
+   <h3>Upload recorded video</h3>
+   <p class="subtitle">Select an MP4 file from your computer.</p>
+   <input type="file" id="videoFile" accept="video/mp4,video/*">
+   <p id="fileInfo" class="subtitle">No file selected</p>
+   <p class="subtitle">Demo only: this selection does not upload to cloud storage yet.</p>
+  </div>
+ </section>
+
+ <section id="schedule" class="page">
+  <h1>Broadcast Schedules</h1>
+  <p class="subtitle">Your planned daily broadcasting timetable (IST).</p>
+  <div class="schedule"><table><thead><tr><th>CHANNEL</th><th>SESSION</th><th>START</th><th>END</th></tr></thead><tbody>
+   <tr><td>01</td><td>Continuous segments</td><td>00:00</td><td>24/7</td></tr>
+   <tr><td>02</td><td>Morning</td><td>05:00</td><td>16:00</td></tr>
+   <tr><td>02</td><td>Evening</td><td>17:00</td><td>04:00</td></tr>
+   <tr><td>03</td><td>Morning</td><td>05:00</td><td>10:00</td></tr>
+   <tr><td>03</td><td>Evening</td><td>17:00</td><td>22:00</td></tr>
+  </tbody></table></div>
+ </section>
+
+ <section id="logs" class="page">
+  <h1>Activity Logs</h1>
+  <div class="card"><p>No streaming activity yet.</p><p class="subtitle">Logs will appear here after connecting the streaming backend.</p></div>
+ </section>
+
+ <section id="settings" class="page">
+  <h1>System Settings</h1>
+  <div class="card">
+   <h3>Streaming configuration</h3>
+   <p class="subtitle">Default output quality: 720p · 30 FPS</p>
+   <p class="subtitle">Time zone: Asia/Kolkata</p>
+   <p class="subtitle">Backend connection: Not configured</p>
+   <p class="subtitle">YouTube authorization: Pending</p>
+  </div>
+ </section>
+ <div class="footer">EVERLIGHT LIVE MANAGER · Version 1.0 · Dashboard preview</div>
+</main>
+</div>
+<script>
+const channels=[
+ {name:"Channel 01",desc:"24/7 Continuous Broadcasting",schedule:"Always on"},
+ {name:"Channel 02",desc:"Extended Broadcasting",schedule:"11 + 11 Hours"},
+ {name:"Channel 03",desc:"Custom Scheduled Broadcasting",schedule:"Morning & Evening"}
+];
+function cards(){
+ return channels.map((c,i)=>`
+ <article class="channel">
+  <div class="chhead"><div class="yt">▶</div><span class="status">Ready for setup</span></div>
+  <h3>${c.name}</h3><p>${c.desc}</p>
+  <div class="details"><span>Schedule</span><strong>${c.schedule}</strong></div>
+  <div class="details"><span>Resolution</span><strong>720p</strong></div>
+  <div class="details"><span>Connection</span><strong>Pending</strong></div>
+ </article>`).join("");
+}
+document.getElementById("channelCards").innerHTML=cards();
+document.getElementById("channelCards2").innerHTML=cards();
+function showPage(id,button){
+ document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+ document.getElementById(id).classList.add("active");
+ document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));
+ button.classList.add("active");
+}
+document.getElementById("videoFile").addEventListener("change",e=>{
+ const f=e.target.files[0];
+ document.getElementById("fileInfo").textContent=f?
+ f.name+" · "+(f.size/1024/1024).toFixed(1)+" MB":"No file selected";
+});
+</script>
+</body>
+</html>
