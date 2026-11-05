@@ -133,17 +133,49 @@ h1{font-size:25px;margin:30px 0 7px}
   <section id="channelManagement" class="page">
 </section>
   
- <section id="media" class="page">
+<section id="media" class="page">
   <h1>Media Library</h1>
-  <p class="subtitle">Prepare your recorded MP4 footage for broadcasting.</p>
+  <p class="subtitle">Organize videos and playlists for all three channels.</p>
+
   <div class="uploadbox">
-   <h3>Upload recorded video</h3>
-   <p class="subtitle">Select an MP4 file from your computer.</p>
-   <input type="file" id="videoFile" accept="video/mp4,video/*">
-   <p id="fileInfo" class="subtitle">No file selected</p>
-   <p class="subtitle">Demo only: this selection does not upload to cloud storage yet.</p>
+    <h3>Upload Individual Videos</h3>
+    <p class="subtitle">Select MP4 videos from your computer.</p>
+
+    <label>Assign to Channel</label>
+    <select id="mediaChannel">
+      <option value="Everlight Music Telugu">Everlight Music Telugu</option>
+      <option value="Everlight Worship">Everlight Worship</option>
+      <option value="Yesaiah Patalu">Yesaiah Patalu</option>
+    </select>
+
+    <p></p>
+    <input type="file" id="videoFiles" accept="video/mp4,video/*" multiple>
+
+    <div id="mediaPreview" style="margin-top:20px"></div>
   </div>
- </section>
+
+  <div class="uploadbox" style="margin-top:25px">
+    <h3>Create Playlist</h3>
+    <p class="subtitle">Organize multiple videos into a playlist.</p>
+
+    <input type="text" id="playlistName"
+      placeholder="Enter playlist name"
+      style="padding:12px;width:100%;max-width:400px">
+
+    <p></p>
+
+    <button onclick="createPlaylist()"
+      style="padding:12px 20px;background:#087451;color:white;border:0;border-radius:8px;cursor:pointer">
+      + Create Playlist
+    </button>
+
+    <div id="playlistContainer" style="margin-top:20px"></div>
+  </div>
+
+  <p style="color:#b45309;margin-top:20px">
+    Note: This version previews files locally in your browser. Cloud storage and permanent playlist saving will be connected later.
+  </p>
+</section>
 
  <section id="schedule" class="page">
   <h1>Broadcast Schedules</h1>
@@ -317,11 +349,119 @@ function showPage(id,button){
  document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));
  button.classList.add("active");
 }
-document.getElementById("videoFile").addEventListener("change",e=>{
- const f=e.target.files[0];
- document.getElementById("fileInfo").textContent=f?
- f.name+" · "+(f.size/1024/1024).toFixed(1)+" MB":"No file selected";
+let mediaLibrary = [];
+let mediaPlaylists = [];
+
+document.getElementById("videoFiles").addEventListener("change", function(event) {
+  const files = Array.from(event.target.files);
+
+  files.forEach(file => {
+    const url = URL.createObjectURL(file);
+    const video = document.createElement("video");
+
+    video.preload = "metadata";
+    video.src = url;
+
+    video.onloadedmetadata = function() {
+      const duration = Math.floor(video.duration);
+
+      mediaLibrary.push({
+        name: file.name,
+        size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
+        duration: Math.floor(duration / 60) + ":" +
+          String(duration % 60).padStart(2, "0"),
+        channel: document.getElementById("mediaChannel").value,
+        url: url
+      });
+
+      renderMediaLibrary();
+    };
+
+    video.onerror = function() {
+      URL.revokeObjectURL(url);
+      alert("Could not read video: " + file.name);
+    };
+  });
 });
+
+function renderMediaLibrary() {
+  const preview = document.getElementById("mediaPreview");
+
+  preview.innerHTML = mediaLibrary.map((item, index) => `
+    <div style="background:#f8fafc;padding:15px;margin-top:12px;border-radius:10px">
+      <strong>${item.name}</strong>
+      <p>${item.size} | ${item.duration}</p>
+      <p>Channel: ${item.channel}</p>
+      <video src="${item.url}" controls style="width:100%;max-width:400px"></video>
+      <button onclick="removeMedia(${index})"
+        style="padding:8px 14px;background:#dc2626;color:white;border:0;border-radius:6px">
+        Remove
+      </button>
+    </div>
+  `).join("");
+}
+
+function removeMedia(index) {
+  URL.revokeObjectURL(mediaLibrary[index].url);
+  mediaLibrary.splice(index, 1);
+  renderMediaLibrary();
+}
+
+function createPlaylist() {
+  const name = document.getElementById("playlistName").value.trim();
+
+  if (!name) {
+    alert("Please enter a playlist name.");
+    return;
+  }
+
+  mediaPlaylists.push({ name: name, videos: [] });
+
+  document.getElementById("playlistName").value = "";
+  renderPlaylists();
+}
+
+function renderPlaylists() {
+  const container = document.getElementById("playlistContainer");
+
+  container.innerHTML = mediaPlaylists.map((playlist, index) => `
+    <div style="background:#f8fafc;padding:15px;margin-top:12px;border-radius:10px">
+      <strong>${playlist.name}</strong>
+      <p>${playlist.videos.length} videos</p>
+      <button onclick="addToPlaylist(${index})">Add Videos</button>
+      <button onclick="deletePlaylist(${index})">Delete</button>
+      <ul>${playlist.videos.map(v => `<li>${v}</li>`).join("")}</ul>
+    </div>
+  `).join("");
+}
+
+function addToPlaylist(index) {
+  if (!mediaLibrary.length) {
+    alert("Upload videos first.");
+    return;
+  }
+
+  const available = mediaLibrary.map((item, i) => i + ": " + item.name);
+
+  const choice = prompt("Enter video number:\n" + available.join("\n"));
+
+  if (choice === null || choice.trim() === "") return;
+
+  const number = Number(choice);
+
+  if (!Number.isInteger(number) || number < 0 || number >= mediaLibrary.length) {
+    alert("Invalid video number.");
+    return;
+  }
+
+  mediaPlaylists[index].videos.push(mediaLibrary[number].name);
+  renderPlaylists();
+}
+
+function deletePlaylist(index) {
+  mediaPlaylists.splice(index, 1);
+  renderPlaylists();
+}
 </script>
 </body>
 </html>
