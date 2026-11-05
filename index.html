@@ -208,6 +208,74 @@ h1{font-size:25px;margin:30px 0 7px}
 </main>
 </div>
 <script>
+  const API_BASE = "https://everlight-live-api.everlightworship1.workers.dev";
+
+let apiToken = null;
+
+async function apiRequest(endpoint, options = {}) {
+  const response = await fetch(API_BASE + endpoint, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      ...(apiToken ? { Authorization: "Bearer " + apiToken } : {})
+    }
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "API request failed");
+  }
+
+  return data;
+}
+
+async function connectDashboard() {
+  try {
+    const password = prompt("Enter your Everlight API Secret:");
+
+    if (!password) {
+      alert("API login cancelled.");
+      return;
+    }
+
+    const response = await fetch(API_BASE + "/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || "Login failed");
+    }
+
+    apiToken = data.token;
+
+    const result = await apiRequest("/api/channels");
+
+    channels = result.channels.map(channel => ({
+      id: channel.id,
+      name: channel.name,
+      desc: channel.description,
+      schedule: channel.id === "emt"
+        ? "5 AM – 10 AM / 5 PM – 10 PM"
+        : channel.id === "ew"
+        ? "24 Hours / 7 Days"
+        : "5 AM – 4 PM / 5 PM – 4 AM",
+      resolution: channel.resolution
+    }));
+
+    document.getElementById("channelCards").innerHTML = cards();
+    document.getElementById("channelCards2").innerHTML = cards();
+
+    alert("Dashboard connected successfully!");
+  } catch (error) {
+    apiToken = null;
+    alert("Connection failed: " + error.message);
+  }
+}
 let channels=[
   {
     name: "Everlight Music Telugu",
