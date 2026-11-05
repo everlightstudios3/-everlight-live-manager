@@ -192,13 +192,31 @@ const channels=[
 ];
 function cards(){
  return channels.map((c,i)=>`
- <article class="channel">
-  <div class="chhead"><div class="yt">▶</div><span class="status">Ready for setup</span></div>
-  <h3>${c.name}</h3><p>${c.desc}</p>
-  <div class="details"><span>Schedule</span><strong>${c.schedule}</strong></div>
-  <div class="details"><span>Resolution</span><strong>720p</strong></div>
-  <div class="details"><span>Connection</span><strong>Pending</strong></div>
- </article>`).join("");
+ <article class="channel" onclick="openChannel(${i})"
+ style="cursor:pointer">
+  <div class="chhead">
+   <div class="yt">▶</div>
+   <span class="status">Ready for setup</span>
+  </div>
+  <h3>${c.name}</h3>
+  <p>${c.desc}</p>
+  <div class="details">
+   <span>Schedule</span>
+   <strong>${c.schedule}</strong>
+  </div>
+  <div class="details">
+   <span>Resolution</span>
+   <strong>720p</strong>
+  </div>
+  <div class="details">
+   <span>Connection</span>
+   <strong>Pending</strong>
+  </div>
+  <p style="color:#087451;margin-top:15px">
+   Manage Channel →
+  </p>
+ </article>
+ `).join("");
 }
 document.getElementById("channelCards").innerHTML=cards();
 document.getElementById("channelCards2").innerHTML=cards();
