@@ -130,6 +130,9 @@ h1{font-size:25px;margin:30px 0 7px}
   <div class="channels" id="channelCards2"></div>
  </section>
 
+  <section id="channelManagement" class="page">
+</section>
+  
  <section id="media" class="page">
   <h1>Media Library</h1>
   <p class="subtitle">Prepare your recorded MP4 footage for broadcasting.</p>
@@ -223,12 +226,90 @@ document.getElementById("channelCards2").innerHTML=cards();
 function openChannel(index) {
   const channel = channels[index];
 
-  alert(
-    "Channel Management\n\n" +
-    "Channel: " + channel.name + "\n" +
-    "Schedule: " + channel.schedule + "\n\n" +
-    "Management features are being developed."
-  );
+  document.querySelectorAll(".page").forEach(p => {
+    p.classList.remove("active");
+  });
+
+  const overview = document.getElementById("channelManagement");
+
+  overview.innerHTML = `
+    <div style="padding:25px">
+
+      <button onclick="showPage('overview', document.querySelector('.nav button'))"
+        style="padding:10px 18px;border:0;border-radius:8px;background:#087451;color:white;cursor:pointer">
+        ← Back to Overview
+      </button>
+
+      <h2 style="margin-top:25px">Channel Management</h2>
+
+      <div style="background:white;padding:25px;border-radius:14px;margin-top:20px;border:1px solid #e5e7eb">
+
+        <h2>${channel.name}</h2>
+        <p style="color:#64748b">${channel.desc}</p>
+
+        <hr style="margin:20px 0;border:0;border-top:1px solid #eee">
+
+        <h3>Broadcast Schedule</h3>
+        <p>${channel.schedule}</p>
+
+        <h3 style="margin-top:25px">Broadcast Settings</h3>
+
+        <label>Streaming Resolution</label>
+        <select id="streamResolution" style="display:block;padding:10px;margin:10px 0;width:100%;max-width:300px">
+          <option value="720p">720p HD</option>
+          <option value="1080p">1080p Full HD</option>
+        </select>
+
+        <h3 style="margin-top:25px">Media Selection</h3>
+
+        <input type="file" id="channelMedia" accept="video/mp4,video/*">
+
+        <p id="selectedMedia" style="color:#64748b;margin-top:10px">
+          No video selected
+        </p>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:25px">
+
+          <button onclick="previewChannelMedia()"
+            style="padding:12px 20px;background:#087451;color:white;border:0;border-radius:8px;cursor:pointer">
+            Select Media
+          </button>
+
+          <button onclick="alert('Streaming backend is not connected yet. This is an interface preview only.')"
+            style="padding:12px 20px;background:#16a34a;color:white;border:0;border-radius:8px;cursor:pointer">
+            Start Broadcast
+          </button>
+
+          <button onclick="alert('No active broadcast is connected yet.')"
+            style="padding:12px 20px;background:#dc2626;color:white;border:0;border-radius:8px;cursor:pointer">
+            Stop Broadcast
+          </button>
+
+        </div>
+
+        <p style="margin-top:25px;color:#b45309">
+          Connection: Backend setup pending. YouTube streaming is not connected yet.
+        </p>
+
+      </div>
+    </div>
+  `;
+
+  overview.classList.add("active");
+}
+
+function previewChannelMedia() {
+  const fileInput = document.getElementById("channelMedia");
+  const display = document.getElementById("selectedMedia");
+
+  if (!fileInput.files.length) {
+    alert("Please select a video first.");
+    return;
+  }
+
+  const file = fileInput.files[0];
+  display.textContent = "Selected: " + file.name +
+    " (" + (file.size / (1024 * 1024)).toFixed(2) + " MB)";
 }
 function showPage(id,button){
  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
