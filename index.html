@@ -220,6 +220,16 @@ function cards(){
 }
 document.getElementById("channelCards").innerHTML=cards();
 document.getElementById("channelCards2").innerHTML=cards();
+function openChannel(index) {
+  const channel = channels[index];
+
+  alert(
+    "Channel Management\n\n" +
+    "Channel: " + channel.name + "\n" +
+    "Schedule: " + channel.schedule + "\n\n" +
+    "Management features are being developed."
+  );
+}
 function showPage(id,button){
  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
  document.getElementById(id).classList.add("active");
