@@ -137,48 +137,79 @@ Connect Backend
   <section id="channelManagement" class="page">
 </section>
   
+
 <section id="media" class="page">
   <h1>Media Library</h1>
-  <p class="subtitle">Organize videos and playlists for all three channels.</p>
+  <p class="subtitle">Manage and store your Everlight Worship videos.</p>
 
   <div class="uploadbox">
-    <h3>Upload Individual Videos</h3>
-    <p class="subtitle">Select MP4 videos from your computer.</p>
+    <h3>Upload Videos</h3>
+    <p class="subtitle">
+      Select MP4 videos from your computer. Files are uploaded securely to cloud storage.
+    </p>
 
     <label>Assign to Channel</label>
     <select id="mediaChannel">
-      <option value="Everlight Music Telugu">Everlight Music Telugu</option>
-      <option value="Everlight Worship">Everlight Worship</option>
-      <option value="Yesaiah Patalu">Yesaiah Patalu</option>
+      <option value="ew">Everlight Worship</option>
     </select>
 
     <p></p>
-    <input type="file" id="videoFiles" accept="video/mp4,video/*" multiple>
+
+    <input
+      type="file"
+      id="videoFiles"
+      accept="video/mp4,.mp4"
+      multiple
+    >
+
+    <p style="font-size:12px;color:#9aa59f;margin-top:10px">
+      Maximum file size: 5 GB per video.
+    </p>
 
     <div id="mediaPreview" style="margin-top:20px"></div>
+
+    <div style="margin-top:20px">
+      <button
+        id="uploadMediaBtn"
+        class="btn"
+        type="button"
+        disabled
+      >
+        Upload Selected Videos
+      </button>
+    </div>
+
+    <div id="uploadStatus" style="margin-top:15px"></div>
   </div>
 
   <div class="uploadbox" style="margin-top:25px">
-    <h3>Create Playlist</h3>
-    <p class="subtitle">Organize multiple videos into a playlist.</p>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <div>
+        <h3>Uploaded Media</h3>
+        <p class="subtitle">Videos stored in your cloud media library.</p>
+      </div>
 
-    <input type="text" id="playlistName"
-      placeholder="Enter playlist name"
-      style="padding:12px;width:100%;max-width:400px">
+      <button
+        id="refreshMediaBtn"
+        class="btn light"
+        type="button"
+      >
+        Refresh Library
+      </button>
+    </div>
 
-    <p></p>
-
-    <button onclick="createPlaylist()"
-      style="padding:12px 20px;background:#087451;color:white;border:0;border-radius:8px;cursor:pointer">
-      + Create Playlist
-    </button>
-
-    <div id="playlistContainer" style="margin-top:20px"></div>
+    <div id="mediaList" style="margin-top:20px">
+      <p class="subtitle">Media library will load here.</p>
+    </div>
   </div>
 
-  <p style="color:#b45309;margin-top:20px">
-    Note: This version previews files locally in your browser. Cloud storage and permanent playlist saving will be connected later.
-  </p>
+  <div class="uploadbox" style="margin-top:25px">
+    <h3>Playlists</h3>
+    <p class="subtitle">
+      Playlist creation and video organization will be connected in the next stage.
+    </p>
+    <div id="playlistContainer"></div>
+  </div>
 </section>
 
 
