@@ -181,17 +181,60 @@ Connect Backend
   </p>
 </section>
 
- <section id="schedule" class="page">
+
+<section id="schedule" class="page">
   <h1>Broadcast Schedules</h1>
-  <p class="subtitle">Your planned daily broadcasting timetable (IST).</p>
-  <div class="schedule"><table><thead><tr><th>CHANNEL</th><th>SESSION</th><th>START</th><th>END</th></tr></thead><tbody>
-   <tr><td>01</td><td>Continuous segments</td><td>00:00</td><td>24/7</td></tr>
-   <tr><td>02</td><td>Morning</td><td>05:00</td><td>16:00</td></tr>
-   <tr><td>02</td><td>Evening</td><td>17:00</td><td>04:00</td></tr>
-   <tr><td>03</td><td>Morning</td><td>05:00</td><td>10:00</td></tr>
-   <tr><td>03</td><td>Evening</td><td>17:00</td><td>22:00</td></tr>
-  </tbody></table></div>
- </section>
+  <p class="subtitle">Manage your daily broadcasting timetable (IST).</p>
+
+  <div class="schedule">
+    <h2>Current Schedules</h2>
+    <p id="scheduleStatus">Connect the dashboard to load schedules.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>CHANNEL</th>
+          <th>SESSION</th>
+          <th>START</th>
+          <th>END</th>
+          <th>STATUS</th>
+          <th>ACTIONS</th>
+        </tr>
+      </thead>
+      <tbody id="scheduleTableBody">
+        <tr>
+          <td colspan="6">Schedules will appear here.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="schedule" style="margin-top:25px;">
+    <h2 id="scheduleFormTitle">Add New Schedule</h2>
+
+    <input type="hidden" id="scheduleEditId">
+
+    <label for="scheduleChannel">Channel</label>
+    <select id="scheduleChannel">
+      <option value="emt">Everlight Music Telugu</option>
+      <option value="ew">Everlight Worship</option>
+      <option value="yp">Yesaiah Patalu</option>
+    </select>
+
+    <label for="scheduleName">Session Name</label>
+    <input id="scheduleName" type="text" placeholder="Example: Morning">
+
+    <label for="scheduleStart">Start Time</label>
+    <input id="scheduleStart" type="time">
+
+    <label for="scheduleEnd">End Time</label>
+    <input id="scheduleEnd" type="time">
+
+    <button type="button" onclick="saveSchedule()">Save Schedule</button>
+    <button type="button" onclick="resetScheduleForm()">Cancel</button>
+  </div>
+</section>
+
 
  <section id="logs" class="page">
   <h1>Activity Logs</h1>
